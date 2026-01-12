@@ -1,0 +1,137 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Dashboard | Meu CRM{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Visão Geral</h1>
+    <a href="{% url 'novo_lead' %}" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:-translate-y-1">
+        <i class="fas fa-plus mr-2"></i> Novo Lead
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+        <div class="p-4 bg-green-50 text-green-600 rounded-xl mr-4">
+            <i class="fas fa-dollar-sign fa-2x"></i>
+        </div>
+        <div class="flex flex-col">
+            <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Receita Total</p>
+            <h2 class="text-2xl font-bold text-gray-800">R$ {{ valor_total }}</h2>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+        <div class="p-4 bg-blue-50 text-blue-600 rounded-xl mr-4">
+            <i class="fas fa-shopping-cart fa-2x"></i>
+        </div>
+        <div class="flex flex-col">
+            <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Vendas Ganhas</p>
+            <h2 class="text-2xl font-bold text-gray-800">{{ vendas_mes }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Desempenho de Vendas (Ganhas)</h3>
+        <canvas id="salesChart" height="200"></canvas>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Status dos Leads</h3>
+        <div class="max-w-[250px] mx-auto">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-50">
+        <h3 class="font-bold text-gray-800">Negócios Recentes</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase font-bold tracking-widest">
+                <tr>
+                    <th class="px-6 py-4">Contato</th>
+                    <th class="px-6 py-4">Empresa</th>
+                    <th class="px-6 py-4">Valor</th>
+                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for item in leads %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-bold text-gray-700">{{ item.contato.nome }}</td>
+                    <td class="px-6 py-4 text-gray-500">{{ item.contato.empresa.nome }}</td>
+                    <td class="px-6 py-4 font-bold text-indigo-600">R$ {{ item.valor }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase 
+                            {% if item.estagio|lower == 'ganho' %} bg-green-100 text-green-700 
+                            {% elif item.estagio|lower == 'perdido' %} bg-red-100 text-red-700 
+                            {% else %} bg-indigo-100 text-indigo-700 {% endif %}">
+                            {{ item.estagio }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <a href="{% url 'editar_lead' item.id %}" class="text-gray-400 hover:text-indigo-600">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-10 text-center text-gray-400">Nenhum negócio encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de Linhas (Vendas)
+        const ctxSales = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctxSales, {
+            type: 'line',
+            data: {
+                labels: {{ labels_vendas|safe|default:"[]" }},
+                datasets: [{
+                    label: 'Vendas (R$)',
+                    data: {{ dados_vendas|safe|default:"[]" }},
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Gráfico de Pizza (Status)
+        const ctxStatus = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels_status|safe|default:"['Sem Dados']" }},
+                datasets: [{
+                    data: {{ dados_status|safe|default:"[1]" }},
+                    backgroundColor: ['#10b981', '#ef4444', '#6366f1', '#f59e0b', '#8b5cf6']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    });
+</script>
+{% endblock %}

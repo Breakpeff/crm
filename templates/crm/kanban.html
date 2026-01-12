@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline | Meu CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-[1600px] mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Pipeline de Vendas (Kanban)</h1>
+            <a href="{% url 'dashboard' %}" class="bg-white px-4 py-2 rounded-lg shadow-sm font-semibold text-indigo-600 hover:bg-gray-50 transition">← Voltar</a>
+        </div>
+
+        <div class="flex gap-6 overflow-x-auto pb-4">
+            {% for slug, lista in colunas.items %}
+            <div class="flex-1 min-w-[300px] bg-gray-200/50 rounded-2xl p-4 border border-gray-200 flex flex-col">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <h2 class="font-bold text-gray-700 uppercase text-sm tracking-wider">{{ slug|capfirst }}</h2>
+                    <span class="bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1 rounded-full">{{ lista|length }}</span>
+                </div>
+
+                <div class="space-y-4 flex-1 kanban-drag-area min-h-[500px]" data-estagio="{{ slug }}">
+                    {% for item in lista %}
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-indigo-300 transition cursor-move group" data-id="{{ item.id }}">
+                        <p class="text-[10px] font-bold text-indigo-600 uppercase mb-1">{{ item.contato.empresa.nome|default:"Sem Empresa" }}</p>
+                        <h3 class="font-bold text-gray-800">{{ item.contato.nome }}</h3>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-sm font-bold text-gray-900">R$ {{ item.valor }}</span>
+                            <a href="{% url 'editar_lead' item.id %}" class="text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.kanban-drag-area').forEach(column => {
+            new Sortable(column, {
+                group: 'kanban',
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                dragClass: 'rotate-2',
+                
+                onEnd: function (evt) {
+                    const leadId = evt.item.getAttribute('data-id');
+                    const novoEstagio = evt.to.getAttribute('data-estagio');
+
+                    // Usamos "../" para garantir que o navegador busque a URL dentro da pasta /crm/
+                    fetch(`../atualizar-status-lead/${leadId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            'estagio': novoEstagio
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error("Erro no servidor:", response.status);
+                            alert('Erro ao salvar movimento no servidor.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro de conexão:', error);
+                        alert('Erro de conexão ao tentar salvar.');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

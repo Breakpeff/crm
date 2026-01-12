@@ -1,0 +1,65 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{{ titulo_pagina }} | CRM{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">{{ titulo_pagina }}</h1>
+    <div class="flex gap-4">
+        <form method="GET" action="{% url 'lista_negocios' %}" class="flex gap-2">
+            <input type="text" name="search" placeholder="Buscar lead ou empresa..." 
+                   value="{{ search_query|default:'' }}"
+                   class="px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-xl hover:bg-gray-900 transition">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+        <a href="{% url 'novo_lead' %}" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-indigo-700 transition">
+            + Novo Lead
+        </a>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-left border-collapse">
+        <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase font-bold tracking-widest">
+            <tr>
+                <th class="px-6 py-4">Contato</th>
+                <th class="px-6 py-4">Empresa</th>
+                <th class="px-6 py-4">Valor</th>
+                <th class="px-6 py-4">Status</th>
+                <th class="px-6 py-4 text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {% for item in objetos %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 font-bold text-gray-700">{{ item.contato.nome }}</td>
+                <td class="px-6 py-4 text-gray-500">{{ item.contato.empresa.nome|default:"-" }}</td>
+                <td class="px-6 py-4 font-bold text-indigo-600">R$ {{ item.valor }}</td>
+                <td class="px-6 py-4">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase 
+                        {% if item.estagio == 'ganho' %} bg-green-100 text-green-700 
+                        {% elif item.estagio == 'perdido' %} bg-red-100 text-red-700 
+                        {% else %} bg-indigo-100 text-indigo-700 {% endif %}">
+                        {{ item.estagio }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <a href="{% url 'editar_lead' item.id %}" class="text-gray-400 hover:text-indigo-600 px-2">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-6 py-12 text-center text-gray-400">
+                    <i class="fas fa-folder-open fa-3x mb-4 block"></i>
+                    Nenhum registro encontrado para este filtro.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
