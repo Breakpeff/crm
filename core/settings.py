@@ -8,7 +8,7 @@ SECRET_KEY = 'django-insecure-or%hfo99i2)))sqjq1=wom0nqa4iyz^%=fh)604-jkfojz)a24
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['Ryangomes.pythonanywhere.com']
+ALLOWED_HOSTS = ['Ryangomes.pythonanywhere.com','127.0.0.1', 'localhost']
 
 
 INSTALLED_APPS = [
@@ -53,11 +53,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'crm_db',
+        'USER': 'postgres',
+        'PASSWORD': 'habbo2602', 
+        'PORT': '5432',
     }
 }
 
